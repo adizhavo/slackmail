@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Read the client id
+auth_url="http://accounts.google.com/o/oauth2/v2/auth"
+scope="https://www.googleapis.com/auth/gmail.readonly"
+redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+token_url="https://www.googleapis.com/oauth2/v4/token"
+
+client_id=$(cat config.json | jq -r '.client_id')
+client_secret=$(cat config.json | jq -r '.client_secret')
+echo "Loaded config with client_id: $client_id"
+echo "client_secret: $client_secret"
+
+# Open the browser for the authorization code
+open "$auth_url?scope=$scope&redirect_uri=$redirect_uri&response_type=code&client_id=$client_id"
+echo "Please paste the authorization code:"
+
+# Read the authorization code
+read auth_code
+echo "Authorization code: $auth_code"
+
+# Get the access token
+form_data="code=$auth_code&client_id=$client_id&client_secret=$client_secret&redirect_uri=$redirect_uri&grant_type=authorization_code"
+curl -s --data $form_data $token_url > temp_token_response.json
+
+# Read token from the json
+access_token=$(cat temp_token_response.json | jq -r '.access_token')
+refresh_token=$(cat temp_token_response.json | jq -r '.refresh_token')
+echo "Access token: $access_token"
+echo "Refresh token: $refresh_token"
+
+# Remove the temp file
+rm temp_token_response.json
+
+# Save the tokens in a json file
+mkdir auth
+echo {\"access_token\" : "\"$access_token\"", \"refresh_token\" : "\"$refresh_token\""} > ./auth/tokens.json
+echo "Authentication successfull."
