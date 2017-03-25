@@ -3,17 +3,26 @@
 # Read the config json
 client_id=$(cat config.json | jq -r '.client_id')
 client_secret=$(cat config.json | jq -r '.client_secret')
+slack=$(cat config.json | jq -r '.slack_hook')
+access_token=$(cat ./resources/token.json | jq -r '.access_token')
+
 echo "Loaded config with client_id: $client_id"
 echo "client_secret: $client_secret"
+echo "slack hook: $slack"
+echo "current access token: $access_token"
+
+gmail_mess="https://www.googleapis.com/gmail/v1/users/me/messages"
 
 # Get the unread emails
-messages=$(curl -s "https://www.googleapis.com/gmail/v1/users/me/messages?access_token=$access_token&includeSpamTrash=false&q=in:inbox%20is:unread" | jq '.messages | .[].id' | sed 's/"//g')
+request="$gmail_mess?access_token=$access_token&includeSpamTrash=false&q=in:inbox%20is:unread"
+messages=$(curl -s $request | jq -r '.messages | .[].id')
 
 for m in $messages
 do
-  	snippet=$(curl -s "https://www.googleapis.com/gmail/v1/users/me/messages/$m?access_token=$access_token&format=minimal" | jq '.snippet')
+  request="$gmail_mess/$m?access_token=$access_token&format=minimal"
+  snippet=$(curl -s $request | jq '.snippet')
 
 	# Send the snippet to slack
 	json='{"text" : '$snippet'}'
-	curl -s -X POST -H 'Content-type: application/json' --data "$json" https://hooks.slack.com/services/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
+	curl -s -X POST -H 'Content-type: application/json' --data "$json" $slack
 done
