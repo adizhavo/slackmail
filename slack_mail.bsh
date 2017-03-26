@@ -15,6 +15,14 @@ function read_messages() {
   request="$gmail_mess?access_token=$access_token&includeSpamTrash=false&q=in:inbox%20is:unread"
   response=$(curl -s $request)
 
+  # Check if there are emails, if not exit
+  if echo $response | jq -e 'has("resultSizeEstimate")' >/dev/null; then
+      resultSize=$(echo $response | jq -r '.resultSizeEstimate')
+      if [ $resultSize = 0 ]; then
+        exit 0;
+      fi
+  fi
+
   # Check if access token has expired
   if echo $response | jq -e 'has("error")' >/dev/null; then
     # Request a new access token
