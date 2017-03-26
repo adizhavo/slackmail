@@ -5,7 +5,13 @@ if ping -c 1 google.com >> /dev/null 2>&1; then
   echo "Internet connection detected"
 else
   echo "Internet connection not detected, will exit"
-  exit 1
+  exit 3
+fi
+
+# Check if the config file exists
+if [ ! -f config.json ]; then
+    echo "Config file not found, please read README.md on github"
+    exit 1;
 fi
 
 auth_url="http://accounts.google.com/o/oauth2/v2/auth"

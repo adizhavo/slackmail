@@ -5,13 +5,27 @@ if ping -c 1 google.com >> /dev/null 2>&1; then
   echo "Internet connection detected"
 else
   echo "Internet connection not detected, will exit"
-  exit 1
+  exit 3
+fi
+
+resources_path=$1
+
+# Check if the config file exists
+if [ ! -f $resources_path/config.json ]; then
+    echo "Config file not found, please read README.md on github"
+    exit 1;
+fi
+
+# Check if the token file exists
+if [ ! -f $resources_path/resources/token.json ]; then
+    echo "Token file not found, please authorize first."
+    exit 2;
 fi
 
 gmail_mess="https://www.googleapis.com/gmail/v1/users/me/messages"
 
 function read_messages() {
-  access_token=$(cat ./resources/token.json | jq -r '.access_token')
+  access_token=$(cat $resources_path/resources/token.json | jq -r '.access_token')
   request="$gmail_mess?access_token=$access_token&includeSpamTrash=false&q=in:inbox%20is:unread"
   response=$(curl -s $request)
 
@@ -27,14 +41,14 @@ function read_messages() {
   if echo $response | jq -e 'has("error")' >/dev/null; then
     # Request a new access token
     gmail_url="https://www.googleapis.com/oauth2/v4/token"
-    refresh_token=$(cat ./resources/token.json | jq -r '.refresh_token')
+    refresh_token=$(cat $resources_path/resources/token.json | jq -r '.refresh_token')
     form_data="refresh_token=$refresh_token&client_id=$client_id&client_secret=$client_secret&grant_type=refresh_token"
     r_response=$(curl -s --data $form_data $gmail_url)
     access_token=$(echo $r_response | jq '.access_token')
     token_type=$(echo $r_response | jq '.token_type')
     expires_in=$(echo $r_response | jq '.expires_in')
     token_file='{"access_token":'$access_token',"token_type":'$token_type',"expires_in":'$expires_in',"refresh_token": "'$refresh_token'"}'
-    echo $token_file > ./resources/token.json
+    echo $token_file > "$resources_path/resources/token.json"
     echo $(read_messages)
   else
     # Return the messages id
@@ -53,7 +67,7 @@ function has_notified() {
 
 # Function for sending and formatting the slack post
 function slack_post() {
-  access_token=$(cat ./resources/token.json | jq -r '.access_token')
+  access_token=$(cat $resources_path/resources/token.json | jq -r '.access_token')
   request="$gmail_mess/$1?access_token=$access_token&format=minimal"
   snippet=$(curl -s $request | jq '.snippet')
 
@@ -66,17 +80,17 @@ function slack_post() {
 }
 
 # Read the config json
-client_id=$(cat config.json | jq -r '.client_id')
-client_secret=$(cat config.json | jq -r '.client_secret')
-slack=$(cat config.json | jq -r '.slack_hook')
+client_id=$(cat $resources_path/config.json | jq -r '.client_id')
+client_secret=$(cat $resources_path/config.json | jq -r '.client_secret')
+slack=$(cat $resources_path/config.json | jq -r '.slack_hook')
 
 echo "Loaded config with client_id: $client_id"
 echo "client_secret: $client_secret"
 echo "slack hook: $slack"
 
 # Load the previous unread emails
-touch "./resources/unread_m.json" || { echo "Cannot write to file" >&2; exit 1;}
-unread=$(cat ./resources/unread_m.json | jq -r ".messages[]")
+touch "$resources_path/resources/unread_m.json" || { echo "Cannot write to file" >&2; exit 1;}
+unread=$(cat $resources_path/resources/unread_m.json | jq -r ".messages[]")
 
 # Try to send the email on slack
 messages=$(read_messages)
@@ -92,4 +106,4 @@ do
   unread+="\"$m\","
 done
 unread+="\"EOF\"]}"
-echo $unread > ./resources/unread_m.json
+echo $unread > $resources_path/resources/unread_m.json
