@@ -21,7 +21,7 @@ messages=$(curl -s $request | jq -r '.messages | .[].id')
 touch "./resources/unread_m.json" || { echo "Cannot write to file" >&2; exit 1;}
 unread=$(cat ./resources/unread_m.json | jq -r ".messages[]")
 
-# Function for checking if the notification for the mail is send
+# Function for checking if the notification for the mail was send
 function has_notified {
   for u in $unread
   do if [ $1 = $u ]; then
