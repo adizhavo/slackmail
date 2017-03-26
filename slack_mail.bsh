@@ -54,7 +54,6 @@ function slack_post() {
   "attachments":[{"text":'$snippet',
   "fallback": "Something went wrong, cannot display the email"},
   {"text":"Read here: https://mail.google.com/mail/inbox/'$1'"}]}'
-  echo $json
   curl -s -X POST -H 'Content-type: application/json' --data "$json" $slack
 }
 
