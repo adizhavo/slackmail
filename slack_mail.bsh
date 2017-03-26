@@ -50,7 +50,11 @@ function slack_post() {
   snippet=$(curl -s $request | jq '.snippet')
 
   # Send the snippet to slack
-  json='{"text" : '$snippet'}'
+  json='{"text":"You received a new email",
+  "attachments":[{"text":'$snippet',
+  "fallback": "Something went wrong, cannot display the email"},
+  {"text":"Read here: https://mail.google.com/mail/inbox/'$1'"}]}'
+  echo $json
   curl -s -X POST -H 'Content-type: application/json' --data "$json" $slack
 }
 
