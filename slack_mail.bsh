@@ -1,19 +1,56 @@
 #!/bin/bash
 
+gmail_mess="https://www.googleapis.com/gmail/v1/users/me/messages"
+
+# Function for checking if the email notification was sent
+function has_notified {
+  for u in $unread
+  do if [ $1 = $u ]; then
+     echo true
+  fi done
+  echo false
+}
+
+# Function for sending and formatting the slack post
+function slack_post {
+  request="$gmail_mess/$1?access_token=$access_token&format=minimal"
+  snippet=$(curl -s $request | jq '.snippet')
+
+  # Send the snippet to slack
+  json='{"text" : '$snippet'}'
+  curl -s -X POST -H 'Content-type: application/json' --data "$json" $slack
+}
+
 # Read the config json
 client_id=$(cat config.json | jq -r '.client_id')
 client_secret=$(cat config.json | jq -r '.client_secret')
+slack=$(cat config.json | jq -r '.slack_hook')
+access_token=$(cat ./resources/token.json | jq -r '.access_token')
+
 echo "Loaded config with client_id: $client_id"
 echo "client_secret: $client_secret"
+echo "slack hook: $slack"
+echo "current access token: $access_token"
 
 # Get the unread emails
-messages=$(curl -s "https://www.googleapis.com/gmail/v1/users/me/messages?access_token=$access_token&includeSpamTrash=false&q=in:inbox%20is:unread" | jq '.messages | .[].id' | sed 's/"//g')
+request="$gmail_mess?access_token=$access_token&includeSpamTrash=false&q=in:inbox%20is:unread"
+messages=$(curl -s $request | jq -r '.messages | .[].id')
 
+# Load the previous unread emails
+touch "./resources/unread_m.json" || { echo "Cannot write to file" >&2; exit 1;}
+unread=$(cat ./resources/unread_m.json | jq -r ".messages[]")
+
+# Try to send the email on slack
+for mess in $messages
+do if ! $(has_notified $mess) ; then
+  slack_post $mess
+fi done
+
+# Save the current unread message for the next check
+unread="{\"messages\":["
 for m in $messages
 do
-  	snippet=$(curl -s "https://www.googleapis.com/gmail/v1/users/me/messages/$m?access_token=$access_token&format=minimal" | jq '.snippet')
-
-	# Send the snippet to slack
-	json='{"text" : '$snippet'}'
-	curl -s -X POST -H 'Content-type: application/json' --data "$json" https://hooks.slack.com/services/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
+  unread+="\"$m\","
 done
+unread+="\"EOF\"]}"
+echo $unread > ./resources/unread_m.json
