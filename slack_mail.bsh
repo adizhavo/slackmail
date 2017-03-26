@@ -70,6 +70,7 @@ function slack_post() {
   access_token=$(cat $resources_path/resources/token.json | jq -r '.access_token')
   request="$gmail_mess/$1?access_token=$access_token&format=minimal"
   snippet=$(curl -s $request | jq '.snippet')
+  snippet=$(echo $snippet | sed 's/&#39;/_/g')
 
   # Send the snippet to slack
   json='{"text":"*You received a new email!*",
