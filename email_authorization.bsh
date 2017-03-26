@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Check internet connection
+if ping -c 1 google.com >> /dev/null 2>&1; then
+  echo "Internet connection detected"
+else
+  echo "Internet connection not detected, will exit"
+  exit 1
+fi
+
 auth_url="http://accounts.google.com/o/oauth2/v2/auth"
 scope="https://www.googleapis.com/auth/gmail.readonly"
 redirect_uri="urn:ietf:wg:oauth:2.0:oob"
