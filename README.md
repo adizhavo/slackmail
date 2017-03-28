@@ -1,6 +1,6 @@
-**Slackmain** is a gmail and slack integration to receive emails in your slack channel for OSX and Linux
+**Slackmail** is a gmail and slack integration to receive emails in your slack channel for OSX and Linux
 
-Slack mail uses [jq](https://stedolan.github.io/jq/) to handle json deserialisation, so before proceeding make sure to have it.
+The system uses [jq](https://stedolan.github.io/jq/) deserialise json, so before proceeding make sure to have it.
 
 Dont forget to make the script executable with the command ```chmod +x <script>```
 
