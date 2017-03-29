@@ -2,7 +2,7 @@
 
 The system uses [jq](https://stedolan.github.io/jq/) deserialise json, so before proceeding make sure to have it.
 
-Dont forget to make the script executable with the command ```chmod +x <script>```
+Dont forget to make the all the scripts executable with the command ```chmod +x <script>```
 
 #### Gmail API
 * Enable the API in the [google developer console](https://console.developers.google.com)
@@ -32,7 +32,7 @@ This is done by setting up a cron job.
 * The path where the ```resources``` exists
 * The path to the jq library
 
-The first argument is required, the second is mostly optional, since it should be able to read jq from the environment variables, but for the cron job the path to jq is required since the cron job is called by the system that doesn’t have the same environment variable of your shell.
+The first argument is required, the second is optional if you are manually executing the script but for the cron job the path to jq is required since the cron job is called by the system that doesn’t have the same environment variable of your shell.
 
 To get the path to the jq library execute the command ```type jq```
 
