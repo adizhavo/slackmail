@@ -25,7 +25,7 @@ If its successful, it will create a file called ```token.json``` under the resou
 If this file is deleted another authorisation is required.
 
 #### Cron job
-The final step is to execute the ```slack_mail.bsh``` script to read and the unread emails form the gmail account and post them on slack.
+The final step is to execute the ```slack_mail.bsh``` script to gets and unread emails form the gmail account and post them on slack.
 This is done by setting up a cron job.
 
 ```slack_mail.bsh``` takes two arguments:
